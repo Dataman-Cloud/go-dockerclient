@@ -2007,12 +2007,17 @@ func TestListVolumes(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Errorf("ListVolumes: wrong status.  Want %d. Got %d.", http.StatusCreated, recorder.Code)
 	}
-	var got []docker.Volume
+	var got map[string][]docker.Volume
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(got, expected) {
+
+	gotVolumes, ok := got["Volumes"]
+	if !ok {
+		t.Fatal(fmt.Errorf("ListVolumes failed can not find Volumes"))
+	}
+	if !reflect.DeepEqual(gotVolumes, expected) {
 		t.Errorf("ListVolumes.  Want %#v.  Got %#v.", expected, got)
 	}
 }
@@ -2248,10 +2253,10 @@ func TestInfoDockerWithSwarm(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectedSwarm := swarm.Info{
-		NodeID: srv1.nodeId,
+		NodeID: srv1.nodeID,
 		RemoteManagers: []swarm.Peer{
-			{NodeID: srv1.nodeId, Addr: srv1.SwarmAddress()},
-			{NodeID: srv2.nodeId, Addr: srv2.SwarmAddress()},
+			{NodeID: srv1.nodeID, Addr: srv1.SwarmAddress()},
+			{NodeID: srv2.nodeID, Addr: srv2.SwarmAddress()},
 		},
 	}
 	infoData.Swarm.Cluster.CreatedAt = time.Time{}
